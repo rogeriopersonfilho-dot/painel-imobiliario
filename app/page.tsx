@@ -1,7 +1,7 @@
 "use client"
 
 import { type ChangeEvent, type FormEvent, useEffect, useState } from "react"
-import { Building2, Users, Plus, Camera, Phone, User } from "lucide-react"
+import { Building2, Users, Plus, Camera, Phone, User, X } from "lucide-react"
 
 type Caracteristicas = {
   quartos: number
@@ -37,7 +37,11 @@ const imoveisIniciais: Imovel[] = [
     valor: 3500000,
     descricao: "Casa com vista para o mar, área gourmet, 4 quartos e excelente acabamento.",
     status: "disponivel",
-    fotos: ["https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=600&q=80"],
+    fotos: [
+      "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=600&q=80",
+      "https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=600&q=80",
+      "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=600&q=80",
+    ],
     caracteristicas: { quartos: 4, suites: 4, piscina: true },
   },
   {
@@ -46,7 +50,11 @@ const imoveisIniciais: Imovel[] = [
     valor: 750000,
     descricao: "Apartamento com boa localização, varanda e iluminação natural intensa.",
     status: "disponivel",
-    fotos: ["https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=600&q=80"],
+    fotos: [
+      "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=600&q=80",
+      "https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=600&q=80",
+      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=600&q=80",
+    ],
     caracteristicas: { quartos: 2, suites: 1, varanda: true },
   },
 ]
@@ -121,6 +129,10 @@ export default function PainelCorretor() {
     }
   }
 
+  const removerFotoSelecionada = (foto: string) => {
+    setNovasFotos((prev) => prev.filter((item) => item !== foto))
+  }
+
   const limparFormularioImovel = () => {
     setNovoTitulo("")
     setNovoValor("")
@@ -148,15 +160,21 @@ export default function PainelCorretor() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Building2 className="w-6 h-6 text-blue-600" />
-            <span className="font-bold text-lg">Vanessa Almeida Consultora Imobiliária</span>
+    <div className="min-h-screen bg-slate-100 text-slate-900">
+      <header className="bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 text-white border-b border-slate-700 sticky top-0 z-30 shadow-sm">
+        <div className="max-w-6xl mx-auto px-4 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="bg-white/10 rounded-xl p-2 backdrop-blur-sm">
+              <Building2 className="w-6 h-6 text-blue-200" />
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-blue-200">Consultora Imobiliária</p>
+              <span className="font-bold text-xl">Vanessa Almeida</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-sm text-slate-600 font-medium">
-            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+
+          <div className="flex items-center gap-2 text-sm text-slate-200 font-medium bg-white/5 rounded-full px-3 py-2 border border-white/10">
+            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
             Conectado ao Supabase
           </div>
         </div>
@@ -166,7 +184,7 @@ export default function PainelCorretor() {
         <div className="flex gap-2 mb-6 border-b border-slate-200 pb-4">
           <button
             onClick={() => setAbaAtiva("imoveis")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all ${
               abaAtiva === "imoveis"
                 ? "bg-blue-600 text-white shadow-sm"
                 : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
@@ -177,7 +195,7 @@ export default function PainelCorretor() {
           </button>
           <button
             onClick={() => setAbaAtiva("leads")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all ${
               abaAtiva === "leads"
                 ? "bg-blue-600 text-white shadow-sm"
                 : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
@@ -191,35 +209,61 @@ export default function PainelCorretor() {
         {abaAtiva === "imoveis" && (
           <div>
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-slate-800">Portfólio de Imóveis</h2>
+              <div>
+                <h2 className="text-2xl font-bold text-slate-800">Portfólio de Imóveis</h2>
+                <p className="text-sm text-slate-500 mt-1">Selecione, destaque e venda com mais qualidade.</p>
+              </div>
+
               <button
                 onClick={() => setModalImovelAberto(true)}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-medium transition-colors shadow-sm"
               >
                 <Plus className="w-4 h-4" />
                 Novo Imóvel
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {imoveis.map((imovel) => (
-                <div key={imovel.id} className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                  <div className="relative h-48 bg-slate-100">
-                    <img src={imovel.fotos[0]} alt={imovel.titulo} className="w-full h-full object-cover" />
+                <div key={imovel.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg transition-shadow">
+                  <div className="bg-slate-100">
+                    {imovel.fotos.length > 1 ? (
+                      <div className="grid grid-cols-2 gap-1 h-52">
+                        <img src={imovel.fotos[0]} alt={imovel.titulo} className="w-full h-full object-cover col-span-2" />
+                        {imovel.fotos.slice(1, 4).map((foto, index) => (
+                          <div key={`${imovel.id}-${index}`} className="relative h-24 overflow-hidden">
+                            <img src={foto} alt={`${imovel.titulo} ${index + 2}`} className="w-full h-full object-cover" />
+                            {index === 2 && imovel.fotos.length > 4 && (
+                              <div className="absolute inset-0 bg-slate-900/50 flex items-center justify-center text-white font-semibold text-sm">
+                                +{imovel.fotos.length - 4}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="relative h-52 bg-slate-100">
+                        <img src={imovel.fotos[0]} alt={imovel.titulo} className="w-full h-full object-cover" />
+                      </div>
+                    )}
+
                     <span className="absolute top-3 right-3 bg-emerald-600 text-white text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider">
                       {imovel.status}
                     </span>
                   </div>
+
                   <div className="p-5">
-                    <h3 className="font-bold text-lg text-slate-800 mb-2">{imovel.titulo}</h3>
+                    <h3 className="font-bold text-xl text-slate-800 mb-2">{imovel.titulo}</h3>
                     <p className="text-sm text-slate-600 mb-3 line-clamp-3">{imovel.descricao}</p>
-                    <p className="text-blue-600 font-extrabold text-xl mb-4">
+                    <p className="text-blue-600 font-extrabold text-2xl mb-4">
                       {imovel.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                     </p>
-                    <div className="flex gap-2 text-xs text-slate-500 border-t border-slate-100 pt-3">
-                      <span>🛏️ {imovel.caracteristicas.quartos || 0} Quartos</span>
-                      <span>•</span>
-                      <span>🏊 {imovel.caracteristicas.piscina ? "Com Piscina" : "Padrão"}</span>
+
+                    <div className="flex flex-wrap gap-2 text-xs text-slate-600 border-t border-slate-100 pt-3">
+                      <span className="bg-slate-100 rounded-full px-2 py-1">🛏️ {imovel.caracteristicas.quartos || 0} Quartos</span>
+                      <span className="bg-slate-100 rounded-full px-2 py-1">
+                        🏊 {imovel.caracteristicas.piscina ? "Com Piscina" : "Padrão"}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -231,7 +275,7 @@ export default function PainelCorretor() {
         {abaAtiva === "leads" && (
           <div>
             <h2 className="text-xl font-bold text-slate-800 mb-6">Gestão de Leads e Clientes</h2>
-            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
@@ -268,9 +312,23 @@ export default function PainelCorretor() {
       </main>
 
       {modalImovelAberto && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
-            <h3 className="text-lg font-bold text-slate-800 mb-4">Cadastrar Novo Imóvel</h3>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-slate-800">Cadastrar Novo Imóvel</h3>
+              <button
+                type="button"
+                aria-label="Fechar modal"
+                onClick={() => {
+                  limparFormularioImovel()
+                  setModalImovelAberto(false)
+                }}
+                className="rounded-full p-2 text-slate-500 hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
             <form onSubmit={handleCadastrarImovel} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Título do Imóvel</label>
@@ -280,7 +338,7 @@ export default function PainelCorretor() {
                   placeholder="Ex: Cobertura Vista Mar Trancoso"
                   value={novoTitulo}
                   onChange={(e) => setNovoTitulo(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm"
+                  className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm"
                 />
               </div>
 
@@ -291,7 +349,7 @@ export default function PainelCorretor() {
                   placeholder="Descreva o imóvel, localização, destaque e características..."
                   value={novaDescricao}
                   onChange={(e) => setNovaDescricao(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm"
+                  className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm"
                 />
               </div>
 
@@ -302,16 +360,16 @@ export default function PainelCorretor() {
                   placeholder="1500000"
                   value={novoValor}
                   onChange={(e) => setNovoValor(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm"
+                  className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Fotos (Selecione várias)</label>
-                <label className="border-2 border-dashed border-slate-300 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition-colors bg-slate-50">
+                <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Fotos do imóvel</label>
+                <label className="border-2 border-dashed border-slate-300 rounded-2xl p-5 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition-colors bg-slate-50">
                   <Camera className="w-8 h-8 text-blue-500 mb-2" />
                   <span className="text-xs font-medium text-slate-600 text-center">
-                    Toque para selecionar várias fotos da galeria ou câmera
+                    Selecione várias fotos da galeria ou câmera
                   </span>
                   <input
                     type="file"
@@ -323,28 +381,38 @@ export default function PainelCorretor() {
                 </label>
 
                 {novasFotos.length > 0 && (
-                  <div className="mt-3 grid grid-cols-3 gap-2">
-                    {novasFotos.slice(0, 6).map((foto, index) => (
-                      <img key={`${foto}-${index}`} src={foto} alt={`Foto ${index + 1}`} className="h-16 w-full object-cover rounded-lg border border-slate-200" />
+                  <div className="mt-4 grid grid-cols-3 gap-2">
+                    {novasFotos.map((foto, index) => (
+                      <div key={`${foto}-${index}`} className="relative group">
+                        <img src={foto} alt={`Foto ${index + 1}`} className="h-20 w-full object-cover rounded-xl border border-slate-200" />
+                        <button
+                          type="button"
+                          aria-label={`Remover foto ${index + 1}`}
+                          onClick={() => removerFotoSelecionada(foto)}
+                          className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-white shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     ))}
                   </div>
                 )}
               </div>
 
-              <div className="flex justify-end gap-2 pt-4">
+              <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => {
                     limparFormularioImovel()
                     setModalImovelAberto(false)
                   }}
-                  className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg"
+                  className="px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm"
+                  className="px-4 py-2.5 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm"
                 >
                   Salvar Imóvel
                 </button>
