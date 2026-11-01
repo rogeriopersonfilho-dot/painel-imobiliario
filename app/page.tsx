@@ -686,29 +686,35 @@ export default function PainelCorretor() {
                 <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Fotos do imóvel</label>
 
                 <div className="grid grid-cols-2 gap-3 mt-2">
-                  <label className="border-2 border-dashed border-slate-300 rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition-colors bg-slate-50 min-h-[110px]">
-                    <Camera className="w-7 h-7 text-blue-500 mb-2" />
-                    <span className="text-xs font-medium text-slate-600 text-center">Tirar foto</span>
+                  <div>
+                    <label htmlFor="foto-camera" className="border-2 border-dashed border-slate-300 rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition-colors bg-slate-50 min-h-[110px]">
+                      <Camera className="w-7 h-7 text-blue-500 mb-2" />
+                      <span className="text-xs font-medium text-slate-600 text-center">Tirar foto</span>
+                    </label>
                     <input
+                      id="foto-camera"
                       type="file"
                       accept="image/*"
                       capture="environment"
-                      className="hidden"
+                      className="sr-only"
                       onChange={(e) => handleFotoUpload(e, false)}
                     />
-                  </label>
+                  </div>
 
-                  <label className="border-2 border-dashed border-slate-300 rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition-colors bg-slate-50 min-h-[110px]">
-                    <Camera className="w-7 h-7 text-blue-500 mb-2" />
-                    <span className="text-xs font-medium text-slate-600 text-center">Galeria</span>
+                  <div>
+                    <label htmlFor="foto-galeria" className="border-2 border-dashed border-slate-300 rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition-colors bg-slate-50 min-h-[110px]">
+                      <Camera className="w-7 h-7 text-blue-500 mb-2" />
+                      <span className="text-xs font-medium text-slate-600 text-center">Galeria</span>
+                    </label>
                     <input
+                      id="foto-galeria"
                       type="file"
                       accept="image/*"
                       multiple
-                      className="hidden"
+                      className="sr-only"
                       onChange={(e) => handleFotoUpload(e, true)}
                     />
-                  </label>
+                  </div>
                 </div>
 
                 {novasFotos.length > 0 && (
