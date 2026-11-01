@@ -281,6 +281,11 @@ export default function PainelCorretor() {
     e.preventDefault()
     if (!novoTitulo.trim()) return
 
+    if (!novaProprietarioId.trim()) {
+      alert("Selecione um proprietário antes de salvar o imóvel.")
+      return
+    }
+
     const payload: Imovel = {
       id: modoEdicaoImovel && imovelEditandoId ? imovelEditandoId : Date.now().toString(),
       titulo: novoTitulo.trim(),
@@ -323,6 +328,7 @@ export default function PainelCorretor() {
     }
 
     setProprietarios((prev) => [novo, ...prev])
+    setNovaProprietarioId(novo.id)
     setNovoPropNome("")
     setNovoPropTelefone("")
     setNovoPropEmail("")
@@ -671,9 +677,10 @@ export default function PainelCorretor() {
                 <select
                   value={novaProprietarioId}
                   onChange={(e) => setNovaProprietarioId(e.target.value)}
+                  required
                   className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm"
                 >
-                  <option value="">Sem proprietário</option>
+                  <option value="">Selecione um proprietário</option>
                   {proprietarios.map((proprietario) => (
                     <option key={proprietario.id} value={proprietario.id}>
                       {proprietario.nome}
