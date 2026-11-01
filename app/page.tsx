@@ -10,6 +10,15 @@ type Caracteristicas = {
   varanda?: boolean
 }
 
+type Proprietario = {
+  id: string
+  nome: string
+  telefone: string
+  email: string
+  endereco: string
+  observacoes: string
+}
+
 type Imovel = {
   id: string
   titulo: string
@@ -18,6 +27,7 @@ type Imovel = {
   status: "disponivel"
   fotos: string[]
   caracteristicas: Caracteristicas
+  proprietarioId?: string
 }
 
 type Lead = {
@@ -29,6 +39,26 @@ type Lead = {
 }
 
 const STORAGE_KEY = "vanessa-almeida-imoveis"
+const STORAGE_PROPRIETARIOS_KEY = "vanessa-almeida-proprietarios"
+
+const proprietariosIniciais: Proprietario[] = [
+  {
+    id: "p1",
+    nome: "Maria Oliveira",
+    telefone: "(73) 98888-0001",
+    email: "mariaoliveira@email.com",
+    endereco: "Rua das Flores, 120, Porto Seguro",
+    observacoes: "Proprietária ativa e prioritária em imóveis de praia.",
+  },
+  {
+    id: "p2",
+    nome: "João Pereira",
+    telefone: "(73) 98888-0002",
+    email: "joao.pereira@email.com",
+    endereco: "Avenida Central, 65, Arraial d'Ajuda",
+    observacoes: "Proprietário de imóveis em área central.",
+  },
+]
 
 const imoveisIniciais: Imovel[] = [
   {
@@ -43,6 +73,7 @@ const imoveisIniciais: Imovel[] = [
       "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=600&q=80",
     ],
     caracteristicas: { quartos: 4, suites: 4, piscina: true },
+    proprietarioId: "p1",
   },
   {
     id: "2",
@@ -56,6 +87,7 @@ const imoveisIniciais: Imovel[] = [
       "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=600&q=80",
     ],
     caracteristicas: { quartos: 2, suites: 1, varanda: true },
+    proprietarioId: "p2",
   },
 ]
 
@@ -92,6 +124,20 @@ const getSafeImoveis = (valor: unknown): Imovel[] => {
   })
 }
 
+const getSafeProprietarios = (valor: unknown): Proprietario[] => {
+  if (!Array.isArray(valor)) return []
+
+  return valor.filter((item): item is Proprietario => {
+    if (!item || typeof item !== "object") return false
+    const current = item as Partial<Proprietario>
+    return (
+      typeof current.id === "string" &&
+      typeof current.nome === "string" &&
+      typeof current.telefone === "string"
+    )
+  })
+}
+
 const readFileAsDataUrl = (file: File) =>
   new Promise<string>((resolve, reject) => {
     const reader = new FileReader()
@@ -101,30 +147,48 @@ const readFileAsDataUrl = (file: File) =>
   })
 
 export default function PainelCorretor() {
-  const [abaAtiva, setAbaAtiva] = useState<"imoveis" | "leads">("imoveis")
+  const [abaAtiva, setAbaAtiva] = useState<"imoveis" | "proprietarios" | "leads">("imoveis")
   const [imoveis, setImoveis] = useState<Imovel[]>([])
+  const [proprietarios, setProprietarios] = useState<Proprietario[]>([])
   const [leads, setLeads] = useState<Lead[]>(leadsIniciais)
   const [modalImovelAberto, setModalImovelAberto] = useState(false)
+  const [modalProprietarioAberto, setModalProprietarioAberto] = useState(false)
 
   const [novoTitulo, setNovoTitulo] = useState("")
   const [novoValor, setNovoValor] = useState("")
   const [novaDescricao, setNovaDescricao] = useState("")
+  const [novaProprietarioId, setNovaProprietarioId] = useState("")
   const [novasFotos, setNovasFotos] = useState<string[]>([])
+
+  const [novoPropNome, setNovoPropNome] = useState("")
+  const [novoPropTelefone, setNovoPropTelefone] = useState("")
+  const [novoPropEmail, setNovoPropEmail] = useState("")
+  const [novoPropEndereco, setNovoPropEndereco] = useState("")
+  const [novoPropObservacoes, setNovoPropObservacoes] = useState("")
 
   useEffect(() => {
     try {
-      const salvo = localStorage.getItem(STORAGE_KEY)
+      const imoveisSalvos = localStorage.getItem(STORAGE_KEY)
+      const proprietariosSalvos = localStorage.getItem(STORAGE_PROPRIETARIOS_KEY)
 
-      if (!salvo) {
+      if (imoveisSalvos) {
+        const parsed = JSON.parse(imoveisSalvos)
+        const validos = getSafeImoveis(parsed)
+        setImoveis(validos.length ? validos : imoveisIniciais)
+      } else {
         setImoveis(imoveisIniciais)
-        return
       }
 
-      const parsed = JSON.parse(salvo)
-      const validos = getSafeImoveis(parsed)
-      setImoveis(validos.length ? validos : imoveisIniciais)
+      if (proprietariosSalvos) {
+        const parsed = JSON.parse(proprietariosSalvos)
+        const validos = getSafeProprietarios(parsed)
+        setProprietarios(validos.length ? validos : proprietariosIniciais)
+      } else {
+        setProprietarios(proprietariosIniciais)
+      }
     } catch {
       setImoveis(imoveisIniciais)
+      setProprietarios(proprietariosIniciais)
     }
   }, [])
 
@@ -133,6 +197,26 @@ export default function PainelCorretor() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(imoveis))
     }
   }, [imoveis])
+
+  useEffect(() => {
+    if (proprietarios.length > 0) {
+      localStorage.setItem(STORAGE_PROPRIETARIOS_KEY, JSON.stringify(proprietarios))
+    }
+  }, [proprietarios])
+
+  const obterNomeProprietario = (proprietarioId?: string) => {
+    if (!proprietarioId) return "Sem proprietário"
+    const prop = proprietarios.find((item) => item.id === proprietarioId)
+    return prop?.nome ?? "Sem proprietário"
+  }
+
+  const limparFormularioImovel = () => {
+    setNovoTitulo("")
+    setNovoValor("")
+    setNovaDescricao("")
+    setNovaProprietarioId(proprietarios[0]?.id ?? "")
+    setNovasFotos([])
+  }
 
   const handleFotoUpload = async (e: ChangeEvent<HTMLInputElement>, multiple = true) => {
     const arquivos = Array.from(e.target.files || [])
@@ -153,13 +237,6 @@ export default function PainelCorretor() {
     setNovasFotos((prev) => prev.filter((item) => item !== foto))
   }
 
-  const limparFormularioImovel = () => {
-    setNovoTitulo("")
-    setNovoValor("")
-    setNovaDescricao("")
-    setNovasFotos([])
-  }
-
   const handleCadastrarImovel = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!novoTitulo.trim()) return
@@ -172,6 +249,7 @@ export default function PainelCorretor() {
       status: "disponivel",
       fotos: novasFotos.length ? novasFotos : ["https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=600&q=80"],
       caracteristicas: { quartos: 3 },
+      proprietarioId: novaProprietarioId || undefined,
     }
 
     setImoveis((prev) => [novo, ...prev])
@@ -184,6 +262,40 @@ export default function PainelCorretor() {
     if (!confirmar) return
 
     setImoveis((prev) => prev.filter((imovel) => imovel.id !== id))
+  }
+
+  const handleCadastrarProprietario = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!novoPropNome.trim()) return
+
+    const novo: Proprietario = {
+      id: Date.now().toString(),
+      nome: novoPropNome.trim(),
+      telefone: novoPropTelefone.trim() || "Não informado",
+      email: novoPropEmail.trim() || "Não informado",
+      endereco: novoPropEndereco.trim() || "Não informado",
+      observacoes: novoPropObservacoes.trim() || "Sem observações.",
+    }
+
+    setProprietarios((prev) => [novo, ...prev])
+    setNovoPropNome("")
+    setNovoPropTelefone("")
+    setNovoPropEmail("")
+    setNovoPropEndereco("")
+    setNovoPropObservacoes("")
+    setModalProprietarioAberto(false)
+  }
+
+  const handleExcluirProprietario = (id: string) => {
+    const confirmar = window.confirm("Deseja excluir este proprietário?")
+    if (!confirmar) return
+
+    setProprietarios((prev) => prev.filter((item) => item.id !== id))
+    setImoveis((prev) =>
+      prev.map((imovel) =>
+        imovel.proprietarioId === id ? { ...imovel, proprietarioId: undefined } : imovel,
+      ),
+    )
   }
 
   return (
@@ -219,6 +331,17 @@ export default function PainelCorretor() {
           >
             <Building2 className="w-4 h-4" />
             Meus Imóveis ({imoveis.length})
+          </button>
+          <button
+            onClick={() => setAbaAtiva("proprietarios")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all ${
+              abaAtiva === "proprietarios"
+                ? "bg-blue-600 text-white shadow-sm"
+                : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+            }`}
+          >
+            <User className="w-4 h-4" />
+            Proprietários ({proprietarios.length})
           </button>
           <button
             onClick={() => setAbaAtiva("leads")}
@@ -294,6 +417,7 @@ export default function PainelCorretor() {
 
                     <div className="p-5">
                       <h3 className="font-bold text-xl text-slate-800 mb-2">{imovel.titulo}</h3>
+                      <p className="text-sm text-slate-600 mb-2">Proprietário: {obterNomeProprietario(imovel.proprietarioId)}</p>
                       <p className="text-sm text-slate-600 mb-3 line-clamp-3">{imovel.descricao}</p>
                       <p className="text-blue-600 font-extrabold text-2xl mb-4">
                         {imovel.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
@@ -309,6 +433,57 @@ export default function PainelCorretor() {
                   </div>
                 )
               })}
+            </div>
+          </div>
+        )}
+
+        {abaAtiva === "proprietarios" && (
+          <div>
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-slate-800">Proprietários</h2>
+                <p className="text-sm text-slate-500 mt-1">Gerencie os donos dos imóveis.</p>
+              </div>
+
+              <button
+                onClick={() => setModalProprietarioAberto(true)}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-medium transition-colors shadow-sm"
+              >
+                <Plus className="w-4 h-4" />
+                Novo Proprietário
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {proprietarios.map((proprietario) => (
+                <div key={proprietario.id} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+                  <div className="flex items-start justify-between gap-3 mb-4">
+                    <div>
+                      <h3 className="font-bold text-lg text-slate-800">{proprietario.nome}</h3>
+                      <p className="text-sm text-slate-500">{proprietario.email}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleExcluirProprietario(proprietario.id)}
+                      className="rounded-full bg-red-100 p-2 text-red-600 hover:bg-red-200"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-2 text-sm text-slate-600">
+                    <p className="flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-slate-400" />
+                      {proprietario.telefone}
+                    </p>
+                    <p className="flex items-center gap-2">
+                      <Building2 className="w-4 h-4 text-slate-400" />
+                      {proprietario.endereco}
+                    </p>
+                    <p className="text-slate-500 pt-2">{proprietario.observacoes}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -406,6 +581,22 @@ export default function PainelCorretor() {
               </div>
 
               <div>
+                <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Proprietário</label>
+                <select
+                  value={novaProprietarioId}
+                  onChange={(e) => setNovaProprietarioId(e.target.value)}
+                  className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm"
+                >
+                  <option value="">Sem proprietário</option>
+                  {proprietarios.map((proprietario) => (
+                    <option key={proprietario.id} value={proprietario.id}>
+                      {proprietario.nome}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
                 <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Fotos do imóvel</label>
 
                 <div className="grid grid-cols-2 gap-3 mt-2">
@@ -469,6 +660,93 @@ export default function PainelCorretor() {
                   className="px-4 py-2.5 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm"
                 >
                   Salvar Imóvel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {modalProprietarioAberto && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-slate-800">Novo Proprietário</h3>
+              <button
+                type="button"
+                onClick={() => setModalProprietarioAberto(false)}
+                className="rounded-full p-2 text-slate-500 hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCadastrarProprietario} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Nome</label>
+                <input
+                  type="text"
+                  required
+                  value={novoPropNome}
+                  onChange={(e) => setNovoPropNome(e.target.value)}
+                  className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Telefone</label>
+                  <input
+                    type="text"
+                    value={novoPropTelefone}
+                    onChange={(e) => setNovoPropTelefone(e.target.value)}
+                    className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">E-mail</label>
+                  <input
+                    type="email"
+                    value={novoPropEmail}
+                    onChange={(e) => setNovoPropEmail(e.target.value)}
+                    className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Endereço</label>
+                <input
+                  type="text"
+                  value={novoPropEndereco}
+                  onChange={(e) => setNovoPropEndereco(e.target.value)}
+                  className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Observações</label>
+                <textarea
+                  rows={3}
+                  value={novoPropObservacoes}
+                  onChange={(e) => setNovoPropObservacoes(e.target.value)}
+                  className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setModalProprietarioAberto(false)}
+                  className="px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2.5 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm"
+                >
+                  Salvar Proprietário
                 </button>
               </div>
             </form>
