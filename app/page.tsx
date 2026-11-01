@@ -1,7 +1,7 @@
 "use client"
 
 import { type ChangeEvent, type FormEvent, useEffect, useState } from "react"
-import { Building2, Users, Plus, Camera, Phone, User, X } from "lucide-react"
+import { Building2, Users, Plus, Camera, Phone, User, X, Trash2 } from "lucide-react"
 
 type Caracteristicas = {
   quartos: number
@@ -115,12 +115,13 @@ export default function PainelCorretor() {
     }
   }, [imoveis])
 
-  const handleFotoUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+  const handleFotoUpload = async (e: ChangeEvent<HTMLInputElement>, multiple = true) => {
     const arquivos = Array.from(e.target.files || [])
     if (!arquivos.length) return
 
     try {
-      const urls = await Promise.all(arquivos.map(readFileAsDataUrl))
+      const selecionadas = multiple ? arquivos : arquivos.slice(0, 1)
+      const urls = await Promise.all(selecionadas.map(readFileAsDataUrl))
       setNovasFotos((prev) => Array.from(new Set([...prev, ...urls])))
     } catch {
       alert("Não foi possível carregar uma ou mais fotos.")
@@ -157,6 +158,13 @@ export default function PainelCorretor() {
     setImoveis((prev) => [novo, ...prev])
     limparFormularioImovel()
     setModalImovelAberto(false)
+  }
+
+  const handleExcluirImovel = (id: string) => {
+    const confirmar = window.confirm("Deseja excluir este imóvel?")
+    if (!confirmar) return
+
+    setImoveis((prev) => prev.filter((imovel) => imovel.id !== id))
   }
 
   return (
@@ -226,7 +234,7 @@ export default function PainelCorretor() {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {imoveis.map((imovel) => (
                 <div key={imovel.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg transition-shadow">
-                  <div className="bg-slate-100">
+                  <div className="relative">
                     {imovel.fotos.length > 1 ? (
                       <div className="grid grid-cols-2 gap-1 h-52">
                         <img src={imovel.fotos[0]} alt={imovel.titulo} className="w-full h-full object-cover col-span-2" />
@@ -246,6 +254,15 @@ export default function PainelCorretor() {
                         <img src={imovel.fotos[0]} alt={imovel.titulo} className="w-full h-full object-cover" />
                       </div>
                     )}
+
+                    <button
+                      type="button"
+                      onClick={() => handleExcluirImovel(imovel.id)}
+                      className="absolute top-3 left-3 flex items-center justify-center rounded-full bg-red-600 text-white p-2 shadow-md hover:bg-red-700 transition-colors"
+                      aria-label={`Excluir ${imovel.titulo}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
 
                     <span className="absolute top-3 right-3 bg-emerald-600 text-white text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider">
                       {imovel.status}
@@ -366,19 +383,32 @@ export default function PainelCorretor() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Fotos do imóvel</label>
-                <label className="border-2 border-dashed border-slate-300 rounded-2xl p-5 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition-colors bg-slate-50">
-                  <Camera className="w-8 h-8 text-blue-500 mb-2" />
-                  <span className="text-xs font-medium text-slate-600 text-center">
-                    Selecione várias fotos da galeria ou câmera
-                  </span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="hidden"
-                    onChange={handleFotoUpload}
-                  />
-                </label>
+
+                <div className="grid grid-cols-2 gap-3 mt-2">
+                  <label className="border-2 border-dashed border-slate-300 rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition-colors bg-slate-50 min-h-[110px]">
+                    <Camera className="w-7 h-7 text-blue-500 mb-2" />
+                    <span className="text-xs font-medium text-slate-600 text-center">Tirar foto</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="hidden"
+                      onChange={(e) => handleFotoUpload(e, false)}
+                    />
+                  </label>
+
+                  <label className="border-2 border-dashed border-slate-300 rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition-colors bg-slate-50 min-h-[110px]">
+                    <Camera className="w-7 h-7 text-blue-500 mb-2" />
+                    <span className="text-xs font-medium text-slate-600 text-center">Galeria</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => handleFotoUpload(e, true)}
+                    />
+                  </label>
+                </div>
 
                 {novasFotos.length > 0 && (
                   <div className="mt-4 grid grid-cols-3 gap-2">
@@ -389,7 +419,7 @@ export default function PainelCorretor() {
                           type="button"
                           aria-label={`Remover foto ${index + 1}`}
                           onClick={() => removerFotoSelecionada(foto)}
-                          className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-white shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-white shadow-md opacity-100 transition-opacity"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
