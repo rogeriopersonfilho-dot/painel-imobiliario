@@ -76,6 +76,22 @@ const leadsIniciais: Lead[] = [
   },
 ]
 
+const getSafeImoveis = (valor: unknown): Imovel[] => {
+  if (!Array.isArray(valor)) return []
+
+  return valor.filter((item): item is Imovel => {
+    if (!item || typeof item !== "object") return false
+    const current = item as Partial<Imovel>
+    return (
+      typeof current.id === "string" &&
+      typeof current.titulo === "string" &&
+      typeof current.valor === "number" &&
+      Array.isArray(current.fotos) &&
+      typeof current.descricao === "string"
+    )
+  })
+}
+
 const readFileAsDataUrl = (file: File) =>
   new Promise<string>((resolve, reject) => {
     const reader = new FileReader()
@@ -98,12 +114,15 @@ export default function PainelCorretor() {
   useEffect(() => {
     try {
       const salvo = localStorage.getItem(STORAGE_KEY)
-      if (salvo) {
-        const itens = JSON.parse(salvo) as Imovel[]
-        setImoveis(itens.length ? itens : imoveisIniciais)
-      } else {
+
+      if (!salvo) {
         setImoveis(imoveisIniciais)
+        return
       }
+
+      const parsed = JSON.parse(salvo)
+      const validos = getSafeImoveis(parsed)
+      setImoveis(validos.length ? validos : imoveisIniciais)
     } catch {
       setImoveis(imoveisIniciais)
     }
@@ -232,59 +251,64 @@ export default function PainelCorretor() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {imoveis.map((imovel) => (
-                <div key={imovel.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg transition-shadow">
-                  <div className="relative">
-                    {imovel.fotos.length > 1 ? (
-                      <div className="grid grid-cols-2 gap-1 h-52">
-                        <img src={imovel.fotos[0]} alt={imovel.titulo} className="w-full h-full object-cover col-span-2" />
-                        {imovel.fotos.slice(1, 4).map((foto, index) => (
-                          <div key={`${imovel.id}-${index}`} className="relative h-24 overflow-hidden">
-                            <img src={foto} alt={`${imovel.titulo} ${index + 2}`} className="w-full h-full object-cover" />
-                            {index === 2 && imovel.fotos.length > 4 && (
-                              <div className="absolute inset-0 bg-slate-900/50 flex items-center justify-center text-white font-semibold text-sm">
-                                +{imovel.fotos.length - 4}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="relative h-52 bg-slate-100">
-                        <img src={imovel.fotos[0]} alt={imovel.titulo} className="w-full h-full object-cover" />
-                      </div>
-                    )}
+              {imoveis.map((imovel) => {
+                const fotoPrincipal = imovel.fotos?.[0] ?? "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=600&q=80"
+                const fotosSecundarias = Array.isArray(imovel.fotos) ? imovel.fotos.slice(1, 4) : []
 
-                    <button
-                      type="button"
-                      onClick={() => handleExcluirImovel(imovel.id)}
-                      className="absolute top-3 left-3 flex items-center justify-center rounded-full bg-red-600 text-white p-2 shadow-md hover:bg-red-700 transition-colors"
-                      aria-label={`Excluir ${imovel.titulo}`}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                return (
+                  <div key={imovel.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg transition-shadow">
+                    <div className="relative">
+                      {imovel.fotos.length > 1 ? (
+                        <div className="grid grid-cols-2 gap-1 h-52">
+                          <img src={fotoPrincipal} alt={imovel.titulo} className="w-full h-full object-cover col-span-2" />
+                          {fotosSecundarias.map((foto, index) => (
+                            <div key={`${imovel.id}-${index}`} className="relative h-24 overflow-hidden">
+                              <img src={foto} alt={`${imovel.titulo} ${index + 2}`} className="w-full h-full object-cover" />
+                              {index === 2 && imovel.fotos.length > 4 && (
+                                <div className="absolute inset-0 bg-slate-900/50 flex items-center justify-center text-white font-semibold text-sm">
+                                  +{imovel.fotos.length - 4}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="relative h-52 bg-slate-100">
+                          <img src={fotoPrincipal} alt={imovel.titulo} className="w-full h-full object-cover" />
+                        </div>
+                      )}
 
-                    <span className="absolute top-3 right-3 bg-emerald-600 text-white text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider">
-                      {imovel.status}
-                    </span>
-                  </div>
+                      <button
+                        type="button"
+                        onClick={() => handleExcluirImovel(imovel.id)}
+                        className="absolute top-3 left-3 flex items-center justify-center rounded-full bg-red-600 text-white p-2 shadow-md hover:bg-red-700 transition-colors"
+                        aria-label={`Excluir ${imovel.titulo}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
 
-                  <div className="p-5">
-                    <h3 className="font-bold text-xl text-slate-800 mb-2">{imovel.titulo}</h3>
-                    <p className="text-sm text-slate-600 mb-3 line-clamp-3">{imovel.descricao}</p>
-                    <p className="text-blue-600 font-extrabold text-2xl mb-4">
-                      {imovel.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                    </p>
-
-                    <div className="flex flex-wrap gap-2 text-xs text-slate-600 border-t border-slate-100 pt-3">
-                      <span className="bg-slate-100 rounded-full px-2 py-1">🛏️ {imovel.caracteristicas.quartos || 0} Quartos</span>
-                      <span className="bg-slate-100 rounded-full px-2 py-1">
-                        🏊 {imovel.caracteristicas.piscina ? "Com Piscina" : "Padrão"}
+                      <span className="absolute top-3 right-3 bg-emerald-600 text-white text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                        {imovel.status}
                       </span>
                     </div>
+
+                    <div className="p-5">
+                      <h3 className="font-bold text-xl text-slate-800 mb-2">{imovel.titulo}</h3>
+                      <p className="text-sm text-slate-600 mb-3 line-clamp-3">{imovel.descricao}</p>
+                      <p className="text-blue-600 font-extrabold text-2xl mb-4">
+                        {imovel.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                      </p>
+
+                      <div className="flex flex-wrap gap-2 text-xs text-slate-600 border-t border-slate-100 pt-3">
+                        <span className="bg-slate-100 rounded-full px-2 py-1">🛏️ {imovel.caracteristicas.quartos || 0} Quartos</span>
+                        <span className="bg-slate-100 rounded-full px-2 py-1">
+                          🏊 {imovel.caracteristicas.piscina ? "Com Piscina" : "Padrão"}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         )}
