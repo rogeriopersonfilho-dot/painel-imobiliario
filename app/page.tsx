@@ -53,6 +53,7 @@ type Lead = {
 
 const STORAGE_KEY = "vanessa-almeida-imoveis"
 const STORAGE_PROPRIETARIOS_KEY = "vanessa-almeida-proprietarios"
+const MAX_FOTOS = 8
 
 const proprietariosIniciais: Proprietario[] = [
   {
@@ -171,6 +172,7 @@ export default function PainelCorretor() {
   const [fotoAtualIndex, setFotoAtualIndex] = useState(0)
   const [modoEdicaoImovel, setModoEdicaoImovel] = useState(false)
   const [imovelEditandoId, setImovelEditandoId] = useState<string | null>(null)
+  const [mostrarCadastroProprietarioInline, setMostrarCadastroProprietarioInline] = useState(false)
 
   const [novoTitulo, setNovoTitulo] = useState("")
   const [novoValor, setNovoValor] = useState("")
@@ -240,6 +242,12 @@ export default function PainelCorretor() {
     setNovasFotos([])
     setModoEdicaoImovel(false)
     setImovelEditandoId(null)
+    setMostrarCadastroProprietarioInline(false)
+    setNovoPropNome("")
+    setNovoPropTelefone("")
+    setNovoPropEmail("")
+    setNovoPropEndereco("")
+    setNovoPropObservacoes("")
   }
 
   const abrirFormularioNovoImovel = () => {
@@ -255,6 +263,7 @@ export default function PainelCorretor() {
     setNovaDescricao(imovel.descricao)
     setNovaProprietarioId(imovel.proprietarioId ?? "")
     setNovasFotos(imovel.fotos)
+    setMostrarCadastroProprietarioInline(false)
     setModalImovelAberto(true)
   }
 
@@ -263,9 +272,9 @@ export default function PainelCorretor() {
     if (!arquivos.length) return
 
     try {
-      const selecionadas = multiple ? arquivos : arquivos.slice(0, 1)
+      const selecionadas = multiple ? arquivos.slice(0, MAX_FOTOS) : arquivos.slice(0, 1)
       const urls = await Promise.all(selecionadas.map(readFileAsDataUrl))
-      setNovasFotos((prev) => Array.from(new Set([...prev, ...urls])))
+      setNovasFotos((prev) => Array.from(new Set([...prev, ...urls])).slice(0, MAX_FOTOS))
     } catch {
       alert("Não foi possível carregar uma ou mais fotos.")
     } finally {
@@ -277,12 +286,37 @@ export default function PainelCorretor() {
     setNovasFotos((prev) => prev.filter((item) => item !== foto))
   }
 
+  const handleSalvarProprietarioRapido = () => {
+    if (!novoPropNome.trim()) {
+      alert("Digite o nome do proprietário antes de salvar.")
+      return
+    }
+
+    const novo: Proprietario = {
+      id: Date.now().toString(),
+      nome: novoPropNome.trim(),
+      telefone: novoPropTelefone.trim() || "Não informado",
+      email: novoPropEmail.trim() || "Não informado",
+      endereco: novoPropEndereco.trim() || "Não informado",
+      observacoes: novoPropObservacoes.trim() || "Sem observações.",
+    }
+
+    setProprietarios((prev) => [novo, ...prev])
+    setNovaProprietarioId(novo.id)
+    setNovoPropNome("")
+    setNovoPropTelefone("")
+    setNovoPropEmail("")
+    setNovoPropEndereco("")
+    setNovoPropObservacoes("")
+    setMostrarCadastroProprietarioInline(false)
+  }
+
   const handleCadastrarImovel = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!novoTitulo.trim()) return
 
     if (!novaProprietarioId.trim()) {
-      alert("Selecione um proprietário antes de salvar o imóvel.")
+      alert("Selecione ou cadastre um proprietário antes de salvar o imóvel.")
       return
     }
 
@@ -619,7 +653,7 @@ export default function PainelCorretor() {
 
       {modalImovelAberto && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200">
+          <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl border border-slate-200">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-slate-800">
                 {modoEdicaoImovel ? "Editar Imóvel" : "Cadastrar Novo Imóvel"}
@@ -638,16 +672,29 @@ export default function PainelCorretor() {
             </div>
 
             <form onSubmit={handleCadastrarImovel} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Título do Imóvel</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ex: Cobertura Vista Mar Trancoso"
-                  value={novoTitulo}
-                  onChange={(e) => setNovoTitulo(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Título do Imóvel</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ex: Cobertura Vista Mar Trancoso"
+                    value={novoTitulo}
+                    onChange={(e) => setNovoTitulo(e.target.value)}
+                    className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Valor (R$)</label>
+                  <input
+                    type="number"
+                    placeholder="1500000"
+                    value={novoValor}
+                    onChange={(e) => setNovoValor(e.target.value)}
+                    className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm"
+                  />
+                </div>
               </div>
 
               <div>
@@ -661,64 +708,85 @@ export default function PainelCorretor() {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Valor (R$)</label>
-                <input
-                  type="number"
-                  placeholder="1500000"
-                  value={novoValor}
-                  onChange={(e) => setNovoValor(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm"
-                />
-              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <label className="block text-xs font-semibold text-slate-600 uppercase">Proprietário</label>
+                  <button
+                    type="button"
+                    onClick={() => setMostrarCadastroProprietarioInline((prev) => !prev)}
+                    className="text-xs font-medium text-blue-600 hover:text-blue-700"
+                  >
+                    {mostrarCadastroProprietarioInline ? "Selecionar existente" : "Novo proprietário"}
+                  </button>
+                </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Proprietário</label>
-                <select
-                  value={novaProprietarioId}
-                  onChange={(e) => setNovaProprietarioId(e.target.value)}
-                  required
-                  className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm"
-                >
-                  <option value="">Selecione um proprietário</option>
-                  {proprietarios.map((proprietario) => (
-                    <option key={proprietario.id} value={proprietario.id}>
-                      {proprietario.nome}
-                    </option>
-                  ))}
-                </select>
+                {!mostrarCadastroProprietarioInline ? (
+                  <select
+                    value={novaProprietarioId}
+                    onChange={(e) => setNovaProprietarioId(e.target.value)}
+                    required
+                    className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm"
+                  >
+                    <option value="">Selecione um proprietário</option>
+                    {proprietarios.map((proprietario) => (
+                      <option key={proprietario.id} value={proprietario.id}>
+                        {proprietario.nome}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      placeholder="Nome do proprietário"
+                      value={novoPropNome}
+                      onChange={(e) => setNovoPropNome(e.target.value)}
+                      className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm"
+                    />
+                    <input
+                      type="tel"
+                      placeholder="Telefone"
+                      value={novoPropTelefone}
+                      onChange={(e) => setNovoPropTelefone(e.target.value)}
+                      className="w-full px-3 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm"
+                    />
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={handleSalvarProprietarioRapido}
+                        className="px-3 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm"
+                      >
+                        Salvar proprietário
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Fotos do imóvel</label>
 
                 <div className="grid grid-cols-2 gap-3 mt-2">
-                  <div>
-                    <label htmlFor="foto-camera" className="border-2 border-dashed border-slate-300 rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition-colors bg-slate-50 min-h-[110px]">
-                      <Camera className="w-7 h-7 text-blue-500 mb-2" />
-                      <span className="text-xs font-medium text-slate-600 text-center">Tirar foto</span>
-                    </label>
+                  <div className="relative border-2 border-dashed border-slate-300 rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition-colors bg-slate-50 min-h-[110px] overflow-hidden">
+                    <Camera className="w-7 h-7 text-blue-500 mb-2" />
+                    <span className="text-xs font-medium text-slate-600 text-center">Tirar foto</span>
                     <input
-                      id="foto-camera"
                       type="file"
                       accept="image/*"
                       capture="environment"
-                      className="sr-only"
+                      className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
                       onChange={(e) => handleFotoUpload(e, false)}
                     />
                   </div>
 
-                  <div>
-                    <label htmlFor="foto-galeria" className="border-2 border-dashed border-slate-300 rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition-colors bg-slate-50 min-h-[110px]">
-                      <Camera className="w-7 h-7 text-blue-500 mb-2" />
-                      <span className="text-xs font-medium text-slate-600 text-center">Galeria</span>
-                    </label>
+                  <div className="relative border-2 border-dashed border-slate-300 rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition-colors bg-slate-50 min-h-[110px] overflow-hidden">
+                    <Camera className="w-7 h-7 text-blue-500 mb-2" />
+                    <span className="text-xs font-medium text-slate-600 text-center">Galeria</span>
                     <input
-                      id="foto-galeria"
                       type="file"
                       accept="image/*"
                       multiple
-                      className="sr-only"
+                      className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
                       onChange={(e) => handleFotoUpload(e, true)}
                     />
                   </div>
