@@ -113,7 +113,7 @@ export default function PainelCorretor() {
 
     try {
       const urls = await Promise.all(arquivos.map(readFileAsDataUrl))
-      setNovasFotos((prev) => [...prev, ...urls])
+      setNovasFotos((prev) => Array.from(new Set([...prev, ...urls])))
     } catch {
       alert("Não foi possível carregar uma ou mais fotos.")
     } finally {
@@ -307,17 +307,16 @@ export default function PainelCorretor() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Fotos (Câmera do Celular)</label>
+                <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Fotos (Selecione várias)</label>
                 <label className="border-2 border-dashed border-slate-300 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition-colors bg-slate-50">
                   <Camera className="w-8 h-8 text-blue-500 mb-2" />
                   <span className="text-xs font-medium text-slate-600 text-center">
-                    Toque para tirar foto ou carregar arquivo
+                    Toque para selecionar várias fotos da galeria ou câmera
                   </span>
                   <input
                     type="file"
                     accept="image/*"
                     multiple
-                    capture="environment"
                     className="hidden"
                     onChange={handleFotoUpload}
                   />
