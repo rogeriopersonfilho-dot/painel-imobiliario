@@ -1,16 +1,40 @@
 "use client"
 
-import { useState } from "react"
+import { type FormEvent, useState } from "react"
 import { Building2, Users, Plus, Camera, Phone, User } from "lucide-react"
 
-const imoveisIniciais = [
+type Caracteristicas = {
+  quartos: number
+  suites?: number
+  piscina?: boolean
+  varanda?: boolean
+}
+
+type Imovel = {
+  id: string
+  titulo: string
+  valor: number
+  status: "disponivel"
+  fotos: string[]
+  caracteristicas: Caracteristicas
+}
+
+type Lead = {
+  id: string
+  nome_cliente: string
+  contato: string
+  imovel: string
+  etapa_funil: string
+}
+
+const imoveisIniciais: Imovel[] = [
   {
     id: "1",
     titulo: "Casa Beira-Mar em Arraial d'Ajuda",
     valor: 3500000,
     status: "disponivel",
     fotos: ["https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=600&q=80"],
-    caracteristicas: { quartos: 4, suites: 4, piscina: true }
+    caracteristicas: { quartos: 4, suites: 4, piscina: true },
   },
   {
     id: "2",
@@ -18,38 +42,50 @@ const imoveisIniciais = [
     valor: 750000,
     status: "disponivel",
     fotos: ["https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=600&q=80"],
-    caracteristicas: { quartos: 2, suites: 1, varanda: true }
-  }
+    caracteristicas: { quartos: 2, suites: 1, varanda: true },
+  },
 ]
 
-const leadsIniciais = [
-  { id: "1", nome_cliente: "Carlos Silva", contato: "(73) 99999-1111", imovel: "Casa Beira-Mar em Arraial d'Ajuda", etapa_funil: "Novo Contato" },
-  { id: "2", nome_cliente: "Mariana Oliveira", contato: "mariana@email.com", imovel: "Apartamento Moderno no Centro", etapa_funil: "Visita Agendada" }
+const leadsIniciais: Lead[] = [
+  {
+    id: "1",
+    nome_cliente: "Carlos Silva",
+    contato: "(73) 99999-1111",
+    imovel: "Casa Beira-Mar em Arraial d'Ajuda",
+    etapa_funil: "Novo Contato",
+  },
+  {
+    id: "2",
+    nome_cliente: "Mariana Oliveira",
+    contato: "mariana@email.com",
+    imovel: "Apartamento Moderno no Centro",
+    etapa_funil: "Visita Agendada",
+  },
 ]
 
 export default function PainelCorretor() {
   const [abaAtiva, setAbaAtiva] = useState<"imoveis" | "leads">("imoveis")
-  const [imoveis, setImoveis] = useState(imoveisIniciais)
-  const [leads, setLeads] = useState(leadsIniciais)
+  const [imoveis, setImoveis] = useState<Imovel[]>(imoveisIniciais)
+  const [leads, setLeads] = useState<Lead[]>(leadsIniciais)
   const [modalImovelAberto, setModalImovelAberto] = useState(false)
 
   const [novoTitulo, setNovoTitulo] = useState("")
   const [novoValor, setNovoValor] = useState("")
 
-  const handleCadastrarImovel = (e: React.FormEvent) => {
+  const handleCadastrarImovel = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!novoTitulo) return
 
-    const novo = {
+    const novo: Imovel = {
       id: Date.now().toString(),
       titulo: novoTitulo,
       valor: Number(novoValor) || 0,
       status: "disponivel",
       fotos: ["https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=600&q=80"],
-      caracteristicas: { quartos: 3 }
+      caracteristicas: { quartos: 3 },
     }
 
-    setImoveis([novo, ...imoveis])
+    setImoveis((prev) => [novo, ...prev])
     setNovoTitulo("")
     setNovoValor("")
     setModalImovelAberto(false)
