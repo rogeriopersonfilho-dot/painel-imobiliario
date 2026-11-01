@@ -1,31 +1,28 @@
+import Link from "next/link";
+
 export default function NotFound() {
   return (
-    <main style={{
-      minHeight: '100vh',
-      display: 'grid',
-      placeItems: 'center',
-      padding: '2rem',
-      background: '#f8fafc',
-      color: '#0f172a',
-      fontFamily: 'Arial, sans-serif',
-    }}>
-      <div style={{
-        maxWidth: '520px',
-        width: '100%',
-        background: '#ffffff',
-        border: '1px solid #e2e8f0',
-        borderRadius: '16px',
-        padding: '2rem',
-        textAlign: 'center',
-        boxShadow: '0 10px 30px rgba(15, 23, 42, 0.06)',
-      }}>
-        <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#2563eb' }}>
+    <main className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+      <div className="w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+        <div className="mb-4 inline-flex rounded-full bg-blue-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-blue-700">
           404
+        </div>
+
+        <h1 className="text-3xl font-bold text-slate-900">Página não encontrada</h1>
+
+        <p className="mt-4 text-base leading-7 text-slate-600">
+          A rota acessada não existe, foi removida ou ainda não foi publicada.
+          Verifique a URL e tente novamente.
         </p>
-        <h1 style={{ margin: '0.75rem 0', fontSize: '2rem' }}>Página não encontrada</h1>
-        <p style={{ margin: 0, color: '#475569', lineHeight: 1.6 }}>
-          A rota acessada não existe ou foi removida. Verifique a URL e tente novamente.
-        </p>
+
+        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <Link
+            href="/"
+            className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+          >
+            Voltar ao painel
+          </Link>
+        </div>
       </div>
     </main>
   );
