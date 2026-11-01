@@ -1,6 +1,6 @@
 "use client"
 
-import { type FormEvent, useState } from "react"
+import { type ChangeEvent, type FormEvent, useEffect, useState } from "react"
 import { Building2, Users, Plus, Camera, Phone, User } from "lucide-react"
 
 type Caracteristicas = {
@@ -14,6 +14,7 @@ type Imovel = {
   id: string
   titulo: string
   valor: number
+  descricao: string
   status: "disponivel"
   fotos: string[]
   caracteristicas: Caracteristicas
@@ -27,11 +28,14 @@ type Lead = {
   etapa_funil: string
 }
 
+const STORAGE_KEY = "vanessa-almeida-imoveis"
+
 const imoveisIniciais: Imovel[] = [
   {
     id: "1",
     titulo: "Casa Beira-Mar em Arraial d'Ajuda",
     valor: 3500000,
+    descricao: "Casa com vista para o mar, área gourmet, 4 quartos e excelente acabamento.",
     status: "disponivel",
     fotos: ["https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=600&q=80"],
     caracteristicas: { quartos: 4, suites: 4, piscina: true },
@@ -40,6 +44,7 @@ const imoveisIniciais: Imovel[] = [
     id: "2",
     titulo: "Apartamento Moderno no Centro",
     valor: 750000,
+    descricao: "Apartamento com boa localização, varanda e iluminação natural intensa.",
     status: "disponivel",
     fotos: ["https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=600&q=80"],
     caracteristicas: { quartos: 2, suites: 1, varanda: true },
@@ -63,31 +68,82 @@ const leadsIniciais: Lead[] = [
   },
 ]
 
+const readFileAsDataUrl = (file: File) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result))
+    reader.onerror = () => reject(new Error("Erro ao ler a imagem"))
+    reader.readAsDataURL(file)
+  })
+
 export default function PainelCorretor() {
   const [abaAtiva, setAbaAtiva] = useState<"imoveis" | "leads">("imoveis")
-  const [imoveis, setImoveis] = useState<Imovel[]>(imoveisIniciais)
+  const [imoveis, setImoveis] = useState<Imovel[]>([])
   const [leads, setLeads] = useState<Lead[]>(leadsIniciais)
   const [modalImovelAberto, setModalImovelAberto] = useState(false)
 
   const [novoTitulo, setNovoTitulo] = useState("")
   const [novoValor, setNovoValor] = useState("")
+  const [novaDescricao, setNovaDescricao] = useState("")
+  const [novasFotos, setNovasFotos] = useState<string[]>([])
+
+  useEffect(() => {
+    try {
+      const salvo = localStorage.getItem(STORAGE_KEY)
+      if (salvo) {
+        const itens = JSON.parse(salvo) as Imovel[]
+        setImoveis(itens.length ? itens : imoveisIniciais)
+      } else {
+        setImoveis(imoveisIniciais)
+      }
+    } catch {
+      setImoveis(imoveisIniciais)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (imoveis.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(imoveis))
+    }
+  }, [imoveis])
+
+  const handleFotoUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+    const arquivos = Array.from(e.target.files || [])
+    if (!arquivos.length) return
+
+    try {
+      const urls = await Promise.all(arquivos.map(readFileAsDataUrl))
+      setNovasFotos((prev) => [...prev, ...urls])
+    } catch {
+      alert("Não foi possível carregar uma ou mais fotos.")
+    } finally {
+      e.target.value = ""
+    }
+  }
+
+  const limparFormularioImovel = () => {
+    setNovoTitulo("")
+    setNovoValor("")
+    setNovaDescricao("")
+    setNovasFotos([])
+  }
 
   const handleCadastrarImovel = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!novoTitulo) return
+    if (!novoTitulo.trim()) return
 
     const novo: Imovel = {
       id: Date.now().toString(),
-      titulo: novoTitulo,
+      titulo: novoTitulo.trim(),
       valor: Number(novoValor) || 0,
+      descricao: novaDescricao.trim() || "Imóvel disponível para visitação e avaliação.",
       status: "disponivel",
-      fotos: ["https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=600&q=80"],
+      fotos: novasFotos.length ? novasFotos : ["https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=600&q=80"],
       caracteristicas: { quartos: 3 },
     }
 
     setImoveis((prev) => [novo, ...prev])
-    setNovoTitulo("")
-    setNovoValor("")
+    limparFormularioImovel()
     setModalImovelAberto(false)
   }
 
@@ -97,7 +153,7 @@ export default function PainelCorretor() {
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Building2 className="w-6 h-6 text-blue-600" />
-            <span className="font-bold text-lg">AVR Imóveis & Leads</span>
+            <span className="font-bold text-lg">Vanessa Almeida Consultora Imobiliária</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-slate-600 font-medium">
             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
@@ -141,7 +197,7 @@ export default function PainelCorretor() {
                 className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
               >
                 <Plus className="w-4 h-4" />
-                Novo Imóvel (Tirar Foto)
+                Novo Imóvel
               </button>
             </div>
 
@@ -156,6 +212,7 @@ export default function PainelCorretor() {
                   </div>
                   <div className="p-5">
                     <h3 className="font-bold text-lg text-slate-800 mb-2">{imovel.titulo}</h3>
+                    <p className="text-sm text-slate-600 mb-3 line-clamp-3">{imovel.descricao}</p>
                     <p className="text-blue-600 font-extrabold text-xl mb-4">
                       {imovel.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                     </p>
@@ -226,6 +283,18 @@ export default function PainelCorretor() {
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm"
                 />
               </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Descrição</label>
+                <textarea
+                  rows={4}
+                  placeholder="Descreva o imóvel, localização, destaque e características..."
+                  value={novaDescricao}
+                  onChange={(e) => setNovaDescricao(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm"
+                />
+              </div>
+
               <div>
                 <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Valor (R$)</label>
                 <input
@@ -236,18 +305,40 @@ export default function PainelCorretor() {
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm"
                 />
               </div>
+
               <div>
                 <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">Fotos (Câmera do Celular)</label>
                 <label className="border-2 border-dashed border-slate-300 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition-colors bg-slate-50">
                   <Camera className="w-8 h-8 text-blue-500 mb-2" />
-                  <span className="text-xs font-medium text-slate-600">Toque para tirar foto ou carregar arquivo</span>
-                  <input type="file" accept="image/*" capture="environment" className="hidden" />
+                  <span className="text-xs font-medium text-slate-600 text-center">
+                    Toque para tirar foto ou carregar arquivo
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    capture="environment"
+                    className="hidden"
+                    onChange={handleFotoUpload}
+                  />
                 </label>
+
+                {novasFotos.length > 0 && (
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    {novasFotos.slice(0, 6).map((foto, index) => (
+                      <img key={`${foto}-${index}`} src={foto} alt={`Foto ${index + 1}`} className="h-16 w-full object-cover rounded-lg border border-slate-200" />
+                    ))}
+                  </div>
+                )}
               </div>
+
               <div className="flex justify-end gap-2 pt-4">
                 <button
                   type="button"
-                  onClick={() => setModalImovelAberto(false)}
+                  onClick={() => {
+                    limparFormularioImovel()
+                    setModalImovelAberto(false)
+                  }}
                   className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg"
                 >
                   Cancelar
