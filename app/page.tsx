@@ -1,7 +1,20 @@
 "use client"
 
 import { type ChangeEvent, type FormEvent, useEffect, useState } from "react"
-import { Building2, Users, Plus, Camera, Phone, User, X, Trash2 } from "lucide-react"
+import {
+  Building2,
+  Users,
+  Plus,
+  Camera,
+  Phone,
+  User,
+  X,
+  Trash2,
+  Pencil,
+  MessageCircle,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react"
 
 type Caracteristicas = {
   quartos: number
@@ -153,6 +166,11 @@ export default function PainelCorretor() {
   const [leads, setLeads] = useState<Lead[]>(leadsIniciais)
   const [modalImovelAberto, setModalImovelAberto] = useState(false)
   const [modalProprietarioAberto, setModalProprietarioAberto] = useState(false)
+  const [modalDetalheImovelAberto, setModalDetalheImovelAberto] = useState(false)
+  const [imovelSelecionado, setImovelSelecionado] = useState<Imovel | null>(null)
+  const [fotoAtualIndex, setFotoAtualIndex] = useState(0)
+  const [modoEdicaoImovel, setModoEdicaoImovel] = useState(false)
+  const [imovelEditandoId, setImovelEditandoId] = useState<string | null>(null)
 
   const [novoTitulo, setNovoTitulo] = useState("")
   const [novoValor, setNovoValor] = useState("")
@@ -204,6 +222,10 @@ export default function PainelCorretor() {
     }
   }, [proprietarios])
 
+  useEffect(() => {
+    setFotoAtualIndex(0)
+  }, [imovelSelecionado?.id])
+
   const obterNomeProprietario = (proprietarioId?: string) => {
     if (!proprietarioId) return "Sem proprietário"
     const prop = proprietarios.find((item) => item.id === proprietarioId)
@@ -216,6 +238,24 @@ export default function PainelCorretor() {
     setNovaDescricao("")
     setNovaProprietarioId(proprietarios[0]?.id ?? "")
     setNovasFotos([])
+    setModoEdicaoImovel(false)
+    setImovelEditandoId(null)
+  }
+
+  const abrirFormularioNovoImovel = () => {
+    limparFormularioImovel()
+    setModalImovelAberto(true)
+  }
+
+  const abrirFormularioEdicaoImovel = (imovel: Imovel) => {
+    setModoEdicaoImovel(true)
+    setImovelEditandoId(imovel.id)
+    setNovoTitulo(imovel.titulo)
+    setNovoValor(String(imovel.valor))
+    setNovaDescricao(imovel.descricao)
+    setNovaProprietarioId(imovel.proprietarioId ?? "")
+    setNovasFotos(imovel.fotos)
+    setModalImovelAberto(true)
   }
 
   const handleFotoUpload = async (e: ChangeEvent<HTMLInputElement>, multiple = true) => {
@@ -241,8 +281,8 @@ export default function PainelCorretor() {
     e.preventDefault()
     if (!novoTitulo.trim()) return
 
-    const novo: Imovel = {
-      id: Date.now().toString(),
+    const payload: Imovel = {
+      id: modoEdicaoImovel && imovelEditandoId ? imovelEditandoId : Date.now().toString(),
       titulo: novoTitulo.trim(),
       valor: Number(novoValor) || 0,
       descricao: novaDescricao.trim() || "Imóvel disponível para visitação e avaliação.",
@@ -252,7 +292,12 @@ export default function PainelCorretor() {
       proprietarioId: novaProprietarioId || undefined,
     }
 
-    setImoveis((prev) => [novo, ...prev])
+    if (modoEdicaoImovel && imovelEditandoId) {
+      setImoveis((prev) => prev.map((imovel) => (imovel.id === imovelEditandoId ? payload : imovel)))
+    } else {
+      setImoveis((prev) => [payload, ...prev])
+    }
+
     limparFormularioImovel()
     setModalImovelAberto(false)
   }
@@ -297,6 +342,26 @@ export default function PainelCorretor() {
       ),
     )
   }
+
+  const abrirGaleriaImovel = (imovel: Imovel) => {
+    setImovelSelecionado(imovel)
+    setModalDetalheImovelAberto(true)
+  }
+
+  const handleWhatsappShare = (imovel: Imovel) => {
+    const texto = [
+      `Olá! Tenho interesse no imóvel: ${imovel.titulo}`,
+      `Valor: ${imovel.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`,
+      `Descrição: ${imovel.descricao}`,
+      `Proprietário: ${obterNomeProprietario(imovel.proprietarioId)}`,
+      `Fotos: ${imovel.fotos.join("\n")}`,
+    ].join("\n\n")
+
+    const url = `https://wa.me/?text=${encodeURIComponent(texto)}`
+    window.open(url, "_blank", "noopener,noreferrer")
+  }
+
+  const fotoAtual = imovelSelecionado?.fotos?.[fotoAtualIndex] ?? ""
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900">
@@ -365,7 +430,7 @@ export default function PainelCorretor() {
               </div>
 
               <button
-                onClick={() => setModalImovelAberto(true)}
+                onClick={abrirFormularioNovoImovel}
                 className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-medium transition-colors shadow-sm"
               >
                 <Plus className="w-4 h-4" />
@@ -379,7 +444,11 @@ export default function PainelCorretor() {
                 const fotosSecundarias = Array.isArray(imovel.fotos) ? imovel.fotos.slice(1, 4) : []
 
                 return (
-                  <div key={imovel.id} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg transition-shadow">
+                  <div
+                    key={imovel.id}
+                    className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-lg transition-shadow cursor-pointer"
+                    onClick={() => abrirGaleriaImovel(imovel)}
+                  >
                     <div className="relative">
                       {imovel.fotos.length > 1 ? (
                         <div className="grid grid-cols-2 gap-1 h-52">
@@ -403,11 +472,26 @@ export default function PainelCorretor() {
 
                       <button
                         type="button"
-                        onClick={() => handleExcluirImovel(imovel.id)}
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          handleExcluirImovel(imovel.id)
+                        }}
                         className="absolute top-3 left-3 flex items-center justify-center rounded-full bg-red-600 text-white p-2 shadow-md hover:bg-red-700 transition-colors"
                         aria-label={`Excluir ${imovel.titulo}`}
                       >
                         <Trash2 className="w-4 h-4" />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          abrirFormularioEdicaoImovel(imovel)
+                        }}
+                        className="absolute top-3 left-12 flex items-center justify-center rounded-full bg-blue-600 text-white p-2 shadow-md hover:bg-blue-700 transition-colors"
+                        aria-label={`Editar ${imovel.titulo}`}
+                      >
+                        <Pencil className="w-4 h-4" />
                       </button>
 
                       <span className="absolute top-3 right-3 bg-emerald-600 text-white text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider">
@@ -531,7 +615,9 @@ export default function PainelCorretor() {
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-slate-800">Cadastrar Novo Imóvel</h3>
+              <h3 className="text-xl font-bold text-slate-800">
+                {modoEdicaoImovel ? "Editar Imóvel" : "Cadastrar Novo Imóvel"}
+              </h3>
               <button
                 type="button"
                 aria-label="Fechar modal"
@@ -659,7 +745,7 @@ export default function PainelCorretor() {
                   type="submit"
                   className="px-4 py-2.5 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm"
                 >
-                  Salvar Imóvel
+                  {modoEdicaoImovel ? "Salvar Alterações" : "Salvar Imóvel"}
                 </button>
               </div>
             </form>
@@ -750,6 +836,116 @@ export default function PainelCorretor() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {modalDetalheImovelAberto && imovelSelecionado && (
+        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-4xl w-full p-5 shadow-2xl border border-slate-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-2xl font-bold text-slate-800">{imovelSelecionado.titulo}</h3>
+              <button
+                type="button"
+                onClick={() => setModalDetalheImovelAberto(false)}
+                className="rounded-full p-2 text-slate-500 hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_0.8fr] gap-6">
+              <div>
+                <div className="relative">
+                  <img
+                    src={fotoAtual || imovelSelecionado.fotos[0]}
+                    alt={imovelSelecionado.titulo}
+                    className="w-full h-[320px] object-cover rounded-2xl border border-slate-200"
+                  />
+
+                  {imovelSelecionado.fotos.length > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setFotoAtualIndex((prev) => (prev === 0 ? imovelSelecionado.fotos.length - 1 : prev - 1))}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-slate-800 shadow-sm hover:bg-white"
+                        aria-label="Foto anterior"
+                      >
+                        <ChevronLeft className="w-5 h-5" />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setFotoAtualIndex((prev) => (prev + 1) % imovelSelecionado.fotos.length)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-slate-800 shadow-sm hover:bg-white"
+                        aria-label="Próxima foto"
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 mt-3">
+                  {imovelSelecionado.fotos.map((foto, index) => (
+                    <button
+                      type="button"
+                      key={`${foto}-${index}`}
+                      onClick={() => setFotoAtualIndex(index)}
+                      className={`overflow-hidden rounded-xl border ${fotoAtualIndex === index ? "border-blue-500 ring-2 ring-blue-200" : "border-slate-200"}`}
+                    >
+                      <img
+                        src={foto}
+                        alt={`${imovelSelecionado.titulo} ${index + 1}`}
+                        className="h-24 w-full object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm uppercase tracking-[0.2em] text-slate-500">Valor</p>
+                  <p className="text-3xl font-extrabold text-blue-600">
+                    {imovelSelecionado.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-sm uppercase tracking-[0.2em] text-slate-500">Descrição</p>
+                  <p className="text-sm text-slate-600 mt-2">{imovelSelecionado.descricao}</p>
+                </div>
+
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-sm text-slate-600">
+                  <p><strong>Proprietário:</strong> {obterNomeProprietario(imovelSelecionado.proprietarioId)}</p>
+                  <p><strong>Quartos:</strong> {imovelSelecionado.caracteristicas.quartos || 0}</p>
+                  <p><strong>Piscina:</strong> {imovelSelecionado.caracteristicas.piscina ? "Sim" : "Não"}</p>
+                </div>
+
+                <div className="flex gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => handleWhatsappShare(imovelSelecionado)}
+                    className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-medium shadow-sm"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    WhatsApp
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModalDetalheImovelAberto(false)
+                      abrirFormularioEdicaoImovel(imovelSelecionado)
+                    }}
+                    className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-medium shadow-sm"
+                  >
+                    <Pencil className="w-4 h-4" />
+                    Editar
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
